@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Your Portfolio</title>
+    <link rel="stylesheet" href="/src/style.css">
+  </head>
+  <body class="bg-gradient-to-br from-black via-indigo-300 to-blue-400 min-h-screen text-white font-sans relative overflow-hidden flex flex-col justify-between items-center py-6">
+    <div class="gradient-bg w-screen h-full absolute top-0 left-0 overflow-hidden z-0">
+      <svg xmlns="http://www.w3.org/2000/svg" class="fixed top-0 left-0 w-0 h-0">
+        <defs>
+          <filter id="goo">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur" />
+            <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 18 -7" result="goo" />
+            <feBlend in="SourceGraphic" in2="goo" />
+          </filter>
+          <filter id="noiseFilter">
+            <feTurbulence type="turbulence" baseFrequency="0.733" numOctaves="2" stitchTiles="stitch" result="noise" />
+            <feColorMatrix type="saturate" values="0" />
+            <feBlend in="SourceGraphic" in2="noise" mode="multiply" />
+          </filter>
+        </defs>
+      </svg>
+      <div class="gradients-container w-full h-full">
+        <div class="g1 absolute"></div>
+        <div class="g2 absolute"></div>
+        <div class="g3 absolute"></div>
+        <div class="g4 absolute"></div>
+        <div class="g5 absolute"></div>
+        <div class="g6 absolute"></div>
+      </div>
+      <div class="noise-pointer absolute w-full h-full top-0 left-0 pointer-events-none" style="filter: url(#noiseFilter);"></div>
+    </div>
+
+    <header class="text-4xl font-mono text-white z-1">
+      <a href="/" class="hover:underline">NITAI'S PORTFOLIO</a>
+    </header>
+
+    <main class="flex-1 flex items-center justify-center w-full z-10">
+      <div id="three-container" class="w-full h-full flex items-center justify-center">
+        <h1 class="text-4xl font-bold text-white">[placeholder]</h1>
+      </div>
+    </main>
+
+    <footer class="flex space-x-15">
+        <a href="https://github.com/ngaurama" target="_blank">
+            <span class="text-4xl bg-white icon-[mdi--github] hover:bg-black"></span>
+        </a>
+        <a href="https://instagram.com/ncgmd_" target="_blank" class="group relative w-10 h-10">
+            <span class="absolute inset-0 text-4xl icon-[mdi--instagram] group-hover:opacity-0 transition-opacity duration-300"></span>
+            <span class="absolute inset-0 text-4xl icon-[skill-icons--instagram] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+        </a>
+        <a href="mailto:ngauram222@gmail.com" target="_blank">
+            <span class="text-4xl icon-[material-symbols--mail-outline] hover:bg-blue-400"></span>
+        </a>
+    </footer>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
