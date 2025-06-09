@@ -16,6 +16,8 @@
     "vite": "^6.3.5"
   },
   "dependencies": {
+    "@babylonjs/core": "^8.11.0",
+    "@babylonjs/loaders": "^8.11.0",
     "@tailwindcss/vite": "^4.1.8",
     "tailwindcss": "^4.1.8"
   }
