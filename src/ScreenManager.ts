@@ -1,12 +1,6 @@
 import { SceneManager } from './SceneManager';
-import { Mesh, DynamicTexture, StandardMaterial, Color3, Material } from '@babylonjs/core';
+import { Mesh, DynamicTexture, StandardMaterial, Color3, Material, Texture } from '@babylonjs/core';
 import { FordJohnsonSorter } from './FordJohnson';
-
-
-const sorter = new FordJohnsonSorter();
-const result = sorter.sort([5, 3, 8, 1, 2]);
-console.log('Sorted:', result);
-console.log('Steps:', sorter.getSteps());
 
 export class ScreenManager {
     private sceneManager: SceneManager;
@@ -25,8 +19,9 @@ export class ScreenManager {
     private viewerContentLines: string[] = [];
     private viewerScrollIndex: number = 0;
     private files: { [key: string]: string[] } = {
-        '/': ['files', 'programs'],
+        '/': ['files', 'programs', 'images'],
         '/files': ['AboutMe.txt', 'Notes.txt', 'Bible.txt'],
+        '/images': ['42.jpeg', 'grinch.jpg'],
         '/programs': ['fordjohnson']
     };
     private currentDirectory: string = '/';
@@ -49,7 +44,10 @@ export class ScreenManager {
             this.screenMaterial.transparencyMode = Material.MATERIAL_ALPHABLEND;
             this.screenMesh.material = this.screenMaterial;
 
-            this.renderInitialContent();
+            this.outputLines.push('Welcome to Ngaurama-Linux 1.8 LTS');
+            this.outputLines.push('>> Type "help" to get started');
+            this.outputLines.push('');
+            this.renderContent();
         }
     }
 
@@ -70,6 +68,7 @@ export class ScreenManager {
                     }
                 } else if (event.key === 'q') {
                     this.isInViewerMode = false;
+                    this.screenMesh.material = this.screenMaterial;
                     this.renderContent();
                 }
                 return;
@@ -107,9 +106,12 @@ export class ScreenManager {
         let response = '';
 
         if (command === 'help') {
-            response = 'Available commands: help, clear, cat, ls';
+            response = 'Available commands: help, clear, cat, ls, view, run';
         } else if (command === 'clear') {
             this.outputLines = [];
+            this.outputLines.push('Welcome to Ngaurama-Linux 1.8 LTS');
+            this.outputLines.push('>> Type "help" to get started');
+            this.outputLines.push('');
             return this.renderContent();
         } else if (command === 'ls') {
             response = `Directory ${this.currentDirectory}: ${this.files[this.currentDirectory].join(', ')}`;
@@ -130,22 +132,33 @@ export class ScreenManager {
         }
         else if (command.toLowerCase().startsWith('cat')) {
             const parts = command.split(' ').filter(part => part.trim() !== '');
-            if (parts.length === 2) {
+            if (parts.length === 2 && !(parts[1].toLowerCase().endsWith(".jpg") || parts[1].toLowerCase().endsWith(".jpeg"))) {
                 const file = parts[1];
                 if (this.files[this.currentDirectory].includes(file)) {
                     this.loadAndViewFile(`/src/files/${file}`);
-                    return;
                 } else {
                     response = `File '${file}' not found in ${this.currentDirectory}.`;
                 }
             } else {
                 response = 'Usage: cat [file]';
             }
+        } else if (command.toLowerCase().startsWith('view')) {
+            const parts = command.split(' ').filter(part => part.trim() !== '');
+            if (parts.length === 2 && (parts[1].toLowerCase().endsWith(".jpg") || parts[1].toLowerCase().endsWith(".jpeg"))) {
+                const file = parts[1];
+                if (this.files[this.currentDirectory].includes(file)) {
+                    this.loadAndViewImage(`/src/images/${file}`);
+                } else {
+                    response = `Image '${file}' not found in ${this.currentDirectory}.`;
+                }
+            } else {
+                response = 'Usage: view [image.jpg/jpeg]';
+            }
         } else if (command.toLowerCase() === 'pwd') {
             response = `Current directory: ${this.currentDirectory}`;
-        } else if (command.startsWith('./fordjohnson')) {
+        } else if (command.startsWith('run fordjohnson')) {
             if (this.currentDirectory !== '/programs') {
-                response = `Error: Program ./fordjohnson not found in ${this.currentDirectory}.`;
+                response = `Error: Program fordjohnson not found in ${this.currentDirectory}.`;
             } else {
                 const numbers = this.parseFordJohnsonCommand(command);
                 if (numbers) {
@@ -153,7 +166,7 @@ export class ScreenManager {
                     const sorted = sorter.sort(numbers);
                     response = `Sorted: ${sorted.join(', ')}`;
                 } else {
-                    response = 'Invalid format. Use: ./fordjohnson [numbers]';
+                    response = 'Invalid format. Use: run fordjohnson [numbers]';
                 }
             }
         } else if (!command)
@@ -162,9 +175,39 @@ export class ScreenManager {
             response = `Command '${command}' not recognized. Type 'help' for assistance.`;
         }
 
-        this.outputLines.push(`evaluator@42: ~$ ${command}`);
+        this.outputLines.push(`evaluator@42:~${this.currentDirectory} $ ${command}`);
         if (response) this.outputLines.push(response);
-        this.updateResponse(response);
+        this.renderContent();
+    }
+
+    private async loadAndViewImage(filePath: string): Promise<void> {
+        try {
+            this.isInViewerMode = true;
+            this.viewerScrollIndex = 0;
+            const img = new Image();
+            img.src = filePath;
+
+            img.onload = () => {
+                const texture = new Texture(filePath, this.sceneManager.scene, true, false, Texture.TRILINEAR_SAMPLINGMODE, () => {
+                    const imageMaterial = new StandardMaterial("imageMaterial", this.sceneManager.scene);
+                    texture.uScale = 1;
+                    texture.vScale = -1;
+                    imageMaterial.diffuseTexture = texture;
+                    imageMaterial.emissiveColor = new Color3(1, 1, 1);
+                    imageMaterial.backFaceCulling = false;
+                    this.screenMesh.material = imageMaterial;
+                }, (msg, err) => {
+                    console.error("Failed to load texture:", msg, err);
+                    this.enterViewerMode(`Failed to load image from ${filePath}`);
+                });
+            };
+            img.onerror = (err) => {
+                console.error("Image load error", err);
+                this.enterViewerMode(`Failed to load image from ${filePath}`);
+            };
+        } catch (error) {
+            this.enterViewerMode(`Error loading ${filePath}: ${error}`);
+        }
     }
 
     private async loadAndViewFile(filePath: string): Promise<void> {
@@ -178,7 +221,6 @@ export class ScreenManager {
     }
 
    private enterViewerMode(content: string): void {
-        console.log('Entering viewer mode with content:', content);
         this.isInViewerMode = true;
         this.viewerScrollIndex = 0;
         this.viewerContentLines = content.split('\n').map(line => line.trim());
@@ -195,7 +237,7 @@ export class ScreenManager {
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top';
 
-        const visibleLines = this.viewerContentLines.slice(this.viewerScrollIndex, this.viewerScrollIndex + 15); // Show up to 15 lines
+        const visibleLines = this.viewerContentLines.slice(this.viewerScrollIndex, this.viewerScrollIndex + 16);
         let y = 20;
         for (const line of visibleLines) {
             const words = line.split(' ');
@@ -217,7 +259,7 @@ export class ScreenManager {
             }
         }
 
-        ctx.fillStyle = '#007700';
+        ctx.fillStyle = '#557700';
         ctx.fillText('     -- Arrow Keys to Navigate, Q to Exit --', 20, 480);
         this.screenTexture.update();
     }
@@ -227,40 +269,7 @@ export class ScreenManager {
         const numbers = parts.map(part => parseInt(part)).filter(num => !isNaN(num));
         return numbers.length > 0 ? numbers : null;
     }
-
-    private updateResponse(response: string): void{
-        const ctx = this.screenTexture.getContext() as CanvasRenderingContext2D;
-        ctx.fillStyle = 'black';
-        ctx.fillRect(0, 0, 512, 512);
-        ctx.font = '20px monospace';
-        ctx.fillStyle = '#FFFFFF';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'top';
-
-        ctx.fillText('Welcome to Ngaurama-Linux 1.8 LTS', 20, 20);
-        ctx.fillText('>> Type "help" to get started', 20, 50);
-        if (response) {
-            ctx.fillStyle = '#FFFF00';
-            ctx.fillText(response, 20, 100);
-        }
-        this.renderContent();
-    }
-
-    renderInitialContent(): void{
-        const ctx = this.screenTexture.getContext() as CanvasRenderingContext2D;
-        ctx.fillStyle = 'black';
-        ctx.fillRect(0, 0, 512, 512);
-        ctx.font = '20px monospace';
-        ctx.fillStyle = '#FFFFFF';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'top';
-
-        ctx.fillText('Welcome to Ngaurama-Linux 1.8 LTS', 20, 20);
-        ctx.fillText('>> Type "help" to get started', 20, 50);
-        ctx.fillText('evaluator@42: ~$ ', 20, 80);
-        this.screenTexture.update();
-    }
-
+    
     renderContent(): void {
         const ctx = this.screenTexture.getContext() as CanvasRenderingContext2D;
         ctx.fillStyle = 'black';
@@ -269,70 +278,217 @@ export class ScreenManager {
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top';
 
-        let y = 20;
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fillText('Welcome to Ngaurama-Linux 1.8 LTS', 20, y);
-        y += 20;
-        ctx.fillText('>> Type "help" to get started', 20, 50);
-        y += 60;
-
-        for (const line of this.outputLines.slice(-10)) {
-            if (line.startsWith('evaluator@42')) {
-                ctx.fillStyle = '#FFFFFF';
-            } 
-            else {
-                ctx.fillStyle = '#FFFF00';
-            }
-            const words = line.split(' ');
+        const calculateWrappedLines = (text: string, maxWidth: number): number => {
+            if (!text) return 1;
+            const words = text.split(' ');
             let currentLine = '';
+            let lineCount = 0;
             for (const word of words) {
                 const testLine = currentLine + (currentLine ? ' ' : '') + word;
                 const width = ctx.measureText(testLine).width;
-                if (width <= this.maxWidth) {
+                if (width <= maxWidth) {
                     currentLine = testLine;
                 } else {
-                    ctx.fillText(currentLine, 20, y);
-                    y += 20;
+                    lineCount++;
                     currentLine = word;
                 }
             }
             if (currentLine) {
-                ctx.fillText(currentLine, 20, y);
+                lineCount++;
+            }
+            return Math.max(lineCount, 1);
+        };
+
+        let totalRenderedLines = 0;
+        const lineHeights: number[] = [];
+        
+        for (const line of this.outputLines) {
+            let wrappedLines: number;
+            if (line.startsWith('evaluator@42')) {
+                const promptEnd = line.indexOf('$ ') + 2;
+                const prompt = line.substring(0, promptEnd);
+                const command = line.substring(promptEnd);
+                const promptLines = calculateWrappedLines(prompt, this.maxWidth);
+                let commandLines = 0;
+                if (command) {
+                    const promptWidth = ctx.measureText(prompt).width;
+                    const remainingWidth = this.maxWidth - promptWidth;
+                    const commandWords = command.split(' ');
+                    let currentLine = '';
+                    let firstLine = true;
+                    
+                    for (const word of commandWords) {
+                        const testLine = currentLine + (currentLine ? ' ' : '') + word;
+                        const width = ctx.measureText(testLine).width;
+                        const availableWidth = firstLine ? remainingWidth : this.maxWidth;
+                        
+                        if (width <= availableWidth) {
+                            currentLine = testLine;
+                        } else {
+                            commandLines++;
+                            currentLine = word;
+                            firstLine = false;
+                        }
+                    }
+                    if (currentLine) {
+                        commandLines++;
+                    }
+                }
+                
+                wrappedLines = Math.max(promptLines, commandLines > 0 ? commandLines : 1);
+            } else {
+                wrappedLines = calculateWrappedLines(line, this.maxWidth);
+            }
+            
+            lineHeights.push(wrappedLines);
+            totalRenderedLines += wrappedLines;
+        }
+        const maxDisplayLines = 24;
+        const promptReservedLines = 2;
+        const availableLines = maxDisplayLines - promptReservedLines;
+        let displayLines = 0;
+        let startIndex = this.outputLines.length;
+        
+        for (let i = this.outputLines.length - 1; i >= 0; i--) {
+            const linesNeeded = lineHeights[i];
+            if (displayLines + linesNeeded <= availableLines) {
+                displayLines += linesNeeded;
+                startIndex = i;
+            } else {
+                break;
+            }
+        }
+        let y = 20;
+        const outputToRender = this.outputLines.slice(startIndex);
+        
+        for (const line of outputToRender) {
+            if (line.startsWith('evaluator@42')) {
+                const promptEnd = line.indexOf('$ ') + 2;
+                const prompt = line.substring(0, promptEnd);
+                const command = line.substring(promptEnd);
+                
+                ctx.fillStyle = '#00FF00';
+                let currentLine = '';
+                let x = 20;
+                const words = prompt.split(' ');
+                for (const word of words) {
+                    const testLine = currentLine + (currentLine ? ' ' : '') + word;
+                    const width = ctx.measureText(testLine).width;
+                    if (width <= this.maxWidth) {
+                        currentLine = testLine;
+                    } else {
+                        ctx.fillText(currentLine, 20, y);
+                        y += 20;
+                        currentLine = word;
+                    }
+                }
+                if (currentLine) {
+                    ctx.fillText(currentLine, x, y);
+                    x += ctx.measureText(currentLine).width;
+                }
+
+                if (command) {
+                    ctx.fillStyle = '#FFFFFF';
+                    const commandWords = command.split(' ');
+                    currentLine = '';
+                    for (const word of commandWords) {
+                        const testLine = currentLine + (currentLine ? ' ' : '') + word;
+                        const width = ctx.measureText(testLine).width;
+                        if (width <= this.maxWidth - x) {
+                            currentLine = testLine;
+                        } else {
+                            ctx.fillText(currentLine, x, y);
+                            y += 20;
+                            x = 20;
+                            currentLine = word;
+                        }
+                    }
+                    if (currentLine) {
+                        ctx.fillText(currentLine, x, y);
+                    }
+                }
+                y += 20;
+            } else if (line) {
+                ctx.fillStyle = (line.startsWith("Welcome") || line.startsWith(">>")) ? '#FFFFFF' : '#FFFF00';
+                let currentLine = '';
+                const words = line.split(' ');
+                for (const word of words) {
+                    const testLine = currentLine + (currentLine ? ' ' : '') + word;
+                    const width = ctx.measureText(testLine).width;
+                    if (width <= this.maxWidth) {
+                        currentLine = testLine;
+                    } else {
+                        ctx.fillText(currentLine, 20, y);
+                        y += 20;
+                        currentLine = word;
+                    }
+                }
+                if (currentLine) {
+                    ctx.fillText(currentLine, 20, y);
+                    y += 20;
+                }
+            } else {
                 y += 20;
             }
         }
 
-        const promptPrefix = `evaluator@42:${this.currentDirectory} ~$ `;
+        const promptPrefix = `evaluator@42:~${this.currentDirectory} $ `;
         ctx.fillStyle = '#00FF00';
         ctx.fillText(promptPrefix, 20, y);
         if (this.inputText) {
             ctx.fillStyle = '#FFFFFF';
-            const words = this.inputText.split(' ');
+            const promptWidth = ctx.measureText(promptPrefix).width;
             let currentLine = '';
-            for (const word of words) {
-                const testLine = currentLine + (currentLine ? ' ' : '') + word;
-                const width = ctx.measureText(testLine).width;
-                if (width <= this.maxWidth - ctx.measureText(promptPrefix).width) {
-                    currentLine = testLine;
-                } else {
-                    ctx.fillText(currentLine, 20 + ctx.measureText(promptPrefix).width, y);
-                    y += 20;
-                    currentLine = word;
+            let yOffset = y;
+            let isFirstLine = true;
+
+            for (let i = 0; i < this.inputText.length; i++) {
+                currentLine += this.inputText[i];
+                const width = ctx.measureText(currentLine).width;
+
+                const currentAvailableWidth = isFirstLine ? (this.maxWidth - promptWidth) : this.maxWidth;
+                if (width > currentAvailableWidth) {
+                    const xOffset = isFirstLine ? (20 + promptWidth) : 20;
+                    ctx.fillText(currentLine.slice(0, -1), xOffset, yOffset);
+                    yOffset += 20;
+                    currentLine = this.inputText[i];
+                    isFirstLine = false;
                 }
             }
+            const xOffset = isFirstLine ? (20 + promptWidth) : 20;
             if (currentLine) {
-                ctx.fillText(currentLine, 20 + ctx.measureText(promptPrefix).width, y);
+                ctx.fillText(currentLine, xOffset, yOffset);
             }
-        }
+       }
 
-        if (this.cursorVisible && !this.isInViewerMode) {
-            const cursorX = 20 + ctx.measureText(promptPrefix + this.inputText).width;
+       if (this.cursorVisible && !this.isInViewerMode) {
+            const promptWidth = ctx.measureText(promptPrefix).width;
+            let currentLine = '';
+            let yOffset = y;
+            let isFirstLine = true;
+            let cursorX = 20 + promptWidth;
+            for (let i = 0; i < this.inputText.length; i++) {
+                currentLine += this.inputText[i];
+                const width = ctx.measureText(currentLine).width;
+
+                const currentAvailableWidth = isFirstLine ? (this.maxWidth - promptWidth) : this.maxWidth;
+                if (width > currentAvailableWidth) {
+                    yOffset += 20;
+                    currentLine = this.inputText[i];
+                    isFirstLine = false;
+                }
+                cursorX = isFirstLine
+                    ? 20 + promptWidth + ctx.measureText(currentLine).width
+                    : 20 + ctx.measureText(currentLine).width;
+            }
+
             ctx.fillStyle = '#00FFFF';
-            ctx.fillText('┃', cursorX, y);
+            ctx.fillText('┃', cursorX, yOffset);
         }
+        
         this.screenTexture.update();
     }
-    
+
     update(): void {
         const now = performance.now();
         if (this.isInViewerMode)

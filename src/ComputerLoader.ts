@@ -12,7 +12,7 @@ export class ComputerLoader {
     async loadComputer(): Promise<void> {
         return new Promise(async (resolve) => {
             try {
-                const container = await LoadAssetContainerAsync('./textures/scaled_retro.glb', this.sceneManager.scene);
+                const container = await LoadAssetContainerAsync('./textures/computer.glb', this.sceneManager.scene);
                 container.addAllToScene();
                 this.sceneManager.computerMeshes = container.meshes as Mesh[];
 
