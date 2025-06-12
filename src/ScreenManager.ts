@@ -244,7 +244,14 @@ export class ScreenManager {
    private enterViewerMode(content: string): void {
         this.isInViewerMode = true;
         this.viewerScrollIndex = 0;
-        this.viewerContentLines = content.split('\n').map(line => line.trim());
+        const paragraphs = content.split(/\n\s*\n/).map(p => p.replace(/\n/g, ' '));
+        this.viewerContentLines = [];
+        for (let i = 0; i < paragraphs.length; i++) {
+            this.viewerContentLines.push(paragraphs[i]);
+            if (i < paragraphs.length - 1) {
+                this.viewerContentLines.push('');
+            }
+        }
         this.renderViewer();
     }
 
@@ -258,9 +265,15 @@ export class ScreenManager {
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top';
 
-        const visibleLines = this.viewerContentLines.slice(this.viewerScrollIndex, this.viewerScrollIndex + 16);
+        const visibleLines = this.viewerContentLines.slice(this.viewerScrollIndex, this.viewerScrollIndex + 22);
         let y = 20;
         for (const line of visibleLines) {
+            if (y + 20 > 460) break;
+            if (line.trim() === '')
+            {
+                y += 20;
+                continue;
+            }
             const words = line.split(' ');
             let currentLine = '';
             for (const word of words) {
@@ -273,6 +286,7 @@ export class ScreenManager {
                     y += 20;
                     currentLine = word;
                 }
+                if (y + 20 > 460) break;
             }
             if (currentLine) {
                 ctx.fillText(currentLine, 20, y);
