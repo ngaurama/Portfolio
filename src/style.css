@@ -251,11 +251,11 @@ label svg.moon{
 }
 
 input:checked + label svg.sun{
-  fill: #7e7e7e;
+  fill: #FFFFFF;
 }
 
 input:checked + label svg.moon{
-  fill: #fff;
+  fill: #FFFFFF;
 }
 
 /* BABYLON */

@@ -9,6 +9,7 @@ export class ScreenManager {
     private screenMaterial!: StandardMaterial;
     private inputText: string = '';
     private cursorVisible: boolean = true;
+    private cursorIndex: number = 0;
     private lastCursorToggle: number = 0;
     private cursorBlinkInterval: number = 500;
     private commandHistory: string[] = [];
@@ -73,29 +74,44 @@ export class ScreenManager {
                 }
                 return;
             }
-            if (event.key.length === 1 && this.inputText.length < 50)
-                this.inputText += event.key;
-            else if (event.key === 'Backspace' && this.inputText.length > 0)
-                this.inputText = this.inputText.slice(0, -1);
-            else if (event.key === 'Enter'){
+            if (event.key.length === 1 && this.inputText.length < 50){
+                this.inputText = this.inputText.slice(0, this.cursorIndex) + event.key + this.inputText.slice(this.cursorIndex);
+                this.cursorIndex++;
+            } else if (event.key === 'Backspace' && this.cursorIndex > 0){
+                this.inputText = this.inputText.slice(0, this.cursorIndex - 1) + this.inputText.slice(this.cursorIndex);
+                this.cursorIndex--;
+            } else if (event.key === 'Delete' && this.cursorIndex < this.inputText.length){
+                this.inputText = this.inputText.slice(0, this.cursorIndex) + this.inputText.slice(this.cursorIndex + 1);
+            } else if(event.key === 'Home' && this.cursorIndex > 0){
+               this.cursorIndex = 0;
+            } else if(event.key === 'End' && this.inputText.length < 50){
+               this.cursorIndex = this.inputText.length;
+            } else if(event.key === 'ArrowLeft' && this.cursorIndex > 0){
+                this.cursorIndex--;
+            } else if(event.key === 'ArrowRight' && this.cursorIndex < this.inputText.length){
+                this.cursorIndex++;
+            } else if (event.key === 'Enter'){
                 if (this.inputText)
                     this.commandHistory.unshift(this.inputText);
                 this.historyIndex = -1;
                 this.handleCommand(this.inputText);
                 this.inputText = '';
-            }
-            else if (event.key === 'ArrowUp') {
+                this.cursorIndex = 0;
+            } else if (event.key === 'ArrowUp') {
                 if (this.historyIndex + 1 < this.commandHistory.length) {
                     this.historyIndex++;
                     this.inputText = this.commandHistory[this.historyIndex];
+                    this.cursorIndex = this.inputText.length;
                 }
             } else if (event.key === 'ArrowDown') {
                 if (this.historyIndex > 0) {
                     this.historyIndex--;
                     this.inputText = this.commandHistory[this.historyIndex];
+                    this.cursorIndex = this.inputText.length;
                 } else {
                     this.historyIndex = -1;
                     this.inputText = '';
+                    this.cursorIndex = 0;
                 }
             } 
             this.renderContent();
@@ -105,8 +121,9 @@ export class ScreenManager {
     private handleCommand(command: string): void {
         let response = '';
 
+        this.outputLines.push(`evaluator@42:~${this.currentDirectory} $ ${command}`);
         if (command === 'help') {
-            response = 'Available commands: help, clear, cat, ls, view, run';
+            response = 'Available commands:\n > ls\n> help\n > clear\n > cd [dir] \n > cat [*.txt]\n > view [*.jpg/jpeg/png]\n > run [fordjohnson {numbers}]';
         } else if (command === 'clear') {
             this.outputLines = [];
             this.outputLines.push('Welcome to Ngaurama-Linux 1.8 LTS');
@@ -124,7 +141,7 @@ export class ScreenManager {
                 } else if (this.files[this.currentDirectory].includes(dir)) {
                     this.currentDirectory = `/${dir}`;
                 } else {
-                    response = `Directory '${dir}' not found.`;
+                    response = `Directory '${parts[1]}' not found.`;
                 }
             } else {
                 response = 'Usage: cd [dir] (e.g., cd files, cd ..)';
@@ -135,7 +152,7 @@ export class ScreenManager {
             if (parts.length === 2 && !(parts[1].toLowerCase().endsWith(".jpg") || parts[1].toLowerCase().endsWith(".jpeg"))) {
                 const file = parts[1];
                 if (this.files[this.currentDirectory].includes(file)) {
-                    this.loadAndViewFile(`/src/files/${file}`);
+                    this.loadAndViewFile(`/files/${file}`);
                 } else {
                     response = `File '${file}' not found in ${this.currentDirectory}.`;
                 }
@@ -147,7 +164,7 @@ export class ScreenManager {
             if (parts.length === 2 && (parts[1].toLowerCase().endsWith(".jpg") || parts[1].toLowerCase().endsWith(".jpeg"))) {
                 const file = parts[1];
                 if (this.files[this.currentDirectory].includes(file)) {
-                    this.loadAndViewImage(`/src/images/${file}`);
+                    this.loadAndViewImage(`/images/${file}`);
                 } else {
                     response = `Image '${file}' not found in ${this.currentDirectory}.`;
                 }
@@ -174,11 +191,15 @@ export class ScreenManager {
         else {
             response = `Command '${command}' not recognized. Type 'help' for assistance.`;
         }
-
-        this.outputLines.push(`evaluator@42:~${this.currentDirectory} $ ${command}`);
-        if (response) this.outputLines.push(response);
+        if (response) {
+            const lines = response.split('\n');
+            for (const line of lines) {
+                this.outputLines.push(line);
+            }
+        }
+        //this.outputLines.push('');
         this.renderContent();
-    }
+}
 
     private async loadAndViewImage(filePath: string): Promise<void> {
         try {
@@ -466,26 +487,45 @@ export class ScreenManager {
             let currentLine = '';
             let yOffset = y;
             let isFirstLine = true;
-            let cursorX = 20 + promptWidth;
+            let cursorX = 15 + promptWidth;
+            let charsInCurrentLine = 0;
+
+            let foundCursorPos = false;
+            outerLoop:
             for (let i = 0; i < this.inputText.length; i++) {
-                currentLine += this.inputText[i];
+                if (i === this.cursorIndex)
+                {
+                    foundCursorPos = true;
+                    break;
+                }
+                currentLine += this.inputText[i] || '';
+                charsInCurrentLine++;
                 const width = ctx.measureText(currentLine).width;
 
                 const currentAvailableWidth = isFirstLine ? (this.maxWidth - promptWidth) : this.maxWidth;
                 if (width > currentAvailableWidth) {
                     yOffset += 20;
-                    currentLine = this.inputText[i];
+                    currentLine = this.inputText[i] || '';
+                    charsInCurrentLine = 1;
                     isFirstLine = false;
                 }
+                if (i === this.inputText.length - 1 && this.cursorIndex === this.inputText.length)
+                {
+                    foundCursorPos = true;
+                    currentLine += '';
+                    break;
+                }
+            }
+            if (foundCursorPos)
+            {
                 cursorX = isFirstLine
-                    ? 20 + promptWidth + ctx.measureText(currentLine).width
-                    : 20 + ctx.measureText(currentLine).width;
+                    ? 15 + promptWidth + ctx.measureText(currentLine).width
+                    : 15 + ctx.measureText(currentLine).width;
             }
 
             ctx.fillStyle = '#00FFFF';
             ctx.fillText('┃', cursorX, yOffset);
         }
-        
         this.screenTexture.update();
     }
 
