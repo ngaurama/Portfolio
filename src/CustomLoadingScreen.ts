@@ -4,7 +4,7 @@ export class CustomLoadingScreen {
     private engine: Engine;
     private progress: number = 0;
 
-    loadingUIBackgroundColor: string = "#000000"; // or any color you want
+    loadingUIBackgroundColor: string = "#000000";
     loadingUIText: string = "Loading...";
 
     constructor(engine: Engine) {
