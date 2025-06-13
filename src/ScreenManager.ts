@@ -152,7 +152,7 @@ export class ScreenManager {
             if (parts.length === 2 && !(parts[1].toLowerCase().endsWith(".jpg") || parts[1].toLowerCase().endsWith(".jpeg"))) {
                 const file = parts[1];
                 if (this.files[this.currentDirectory].includes(file)) {
-                    this.loadAndViewFile(`./files/${file}`);
+                    this.loadAndViewFile(import.meta.env.BASE_URL + `/files/${file}`);
                 } else {
                     response = `File '${file}' not found in ${this.currentDirectory}.`;
                 }
@@ -164,7 +164,7 @@ export class ScreenManager {
             if (parts.length === 2 && (parts[1].toLowerCase().endsWith(".jpg") || parts[1].toLowerCase().endsWith(".jpeg"))) {
                 const file = parts[1];
                 if (this.files[this.currentDirectory].includes(file)) {
-                    this.loadAndViewImage(`./images/${file}`);
+                    this.loadAndViewImage(import.meta.env.BASE_URL + `/images/${file}`);
                 } else {
                     response = `Image '${file}' not found in ${this.currentDirectory}.`;
                 }
