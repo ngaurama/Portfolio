@@ -398,7 +398,7 @@ export class ScreenManager {
         
         for (const line of outputToRender) {
             if (line.startsWith('evaluator@42')) {
-                const promptEnd = line.indexOf('$ ') + 2;
+                const promptEnd = line.indexOf('$ ') + 3;
                 const prompt = line.substring(0, promptEnd);
                 const command = line.substring(promptEnd);
                 
