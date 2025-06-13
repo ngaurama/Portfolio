@@ -32,7 +32,7 @@ export class SceneManager
         this.scene = this.createScene();
         this.scene.useRightHandedSystem = true;
 
-        this.customLoadingScreen = new CustomLoadingScreen(this.engine);
+        this.customLoadingScreen = new CustomLoadingScreen();
         this.engine.loadingScreen = this.customLoadingScreen;
         this.engine.displayLoadingUI();
         new ComputerLoader(this).loadComputer().then(() => {
