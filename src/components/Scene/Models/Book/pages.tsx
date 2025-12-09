@@ -1098,7 +1098,7 @@ const createNotebookPages = () => {
         position: vec3(0, 0.45, 0),
         size: vec3(0.5, 0.04, 0.005),
         name: `Email connect`,
-        onClick: () => {hotspotActions.openEmail("hello@ngaurama.com")},
+        onClick: () => {hotspotActions.openEmail("nitai.gauramani.dev@gmail.com")},
         debugColor: "red",
         side: "front" as const,
       },

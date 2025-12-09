@@ -77,7 +77,7 @@ export default function Footer() {
 
                 {/* Mail */}
                 <div className="relative">
-                    <a href="mailto:hello@ngaurama.com">
+                    <a href="mailto:nitai.gauramani.dev@gmail.com">
                     <img
                         src="/mail.gif"
                         alt="Mail Logo"
