@@ -1094,6 +1094,16 @@ const createNotebookPages = () => {
     hotspots: [
       // hotspot_contents_back,
       hotspot_contents_front,
+      { 
+        position: vec3(-0.001, -0.69, 0),
+        size: vec3(0.78, 0.05, 0.002),
+        name: "Go to closed book (0)",
+        onClick: (setPage: (update: SetStateAction<number>) => void) => hotspotActions.goToPage(0, setPage),
+        debugColor: "white",
+        side: "back" as const,
+        isToggle: false,
+        actionType: 'link' as const
+      },
       {
         position: vec3(0, 0.45, 0),
         size: vec3(0.5, 0.04, 0.005),
@@ -1121,7 +1131,7 @@ const createNotebookPages = () => {
       {
         position: vec3(0.08, 0.14, 0),
         size: vec3(0.3, 0.04, 0.005),
-        name: `Linkedin connect`,
+        name: `CV`,
         onClick: () => {hotspotActions.openPDF("/Nitai_CV.pdf")},
         debugColor: "red",
         side: "front" as const,

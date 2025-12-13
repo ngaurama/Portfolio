@@ -247,14 +247,14 @@ const HotspotMesh: React.FC<HotspotMeshProps> = ({
         opacity={0.3}
         color={hotspot.debugColor}
         wireframe={!!hotspot.debugColor}
-      /> */}
+      />  */}
 
       {/* INVISIBLE MESH */}
       <meshBasicMaterial
         transparent
         opacity={0}      // Fully invisible
         depthWrite={false} // Prevent writing to depth buffer
-      />
+      /> 
     </mesh>
   );
 };
