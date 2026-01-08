@@ -1,18 +1,22 @@
 // components/Scene/Models/MusicWidget.tsx
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
-import { useModels } from '../../../../hooks/useModels'
 import { useFrame } from '@react-three/fiber'
 import { useMusicPlayer } from '../../../../hooks/useMusicPlayer'
 import { Text } from '@react-three/drei'
+import type { GLTF } from 'three-stdlib'
 
 interface MusicWidgetProps {
+  model: GLTF | null,
+  active: boolean,
   position?: [number, number, number],
   rotation?: [number, number, number],
 }
 
-export function MusicWidget({ position = [0, 0, 0], rotation = [0, Math.PI * -0.1, 0] }: MusicWidgetProps) {
-  const { models } = useModels()
+const SCALE_ZERO = new THREE.Vector3(0.0001, 0.0001, 0.0001)
+const SCALE_ONE = new THREE.Vector3(1, 1, 1)
+
+export function MusicWidget({ model, active, position = [0, 0, 0], rotation = [0, Math.PI * -0.1, 0] }: MusicWidgetProps) {
   // const { scene } = useThree()
   const musicWidgetRef = useRef<THREE.Group>(null)
   const progressBarRef = useRef<THREE.Mesh>(null)
@@ -34,11 +38,21 @@ export function MusicWidget({ position = [0, 0, 0], rotation = [0, Math.PI * -0.
     playPrevious
   } = useMusicPlayer()
 
+  const scene = useMemo(() => {
+    if (!model) return null
+    return model.scene.clone(true)
+  }, [model])
+
+  useFrame((_, delta) => {
+    if (!musicWidgetRef.current) return
+    const target = active ? SCALE_ONE : SCALE_ZERO
+    musicWidgetRef.current.scale.lerp(target, delta * 6)
+  })
 
   useEffect(() => {
-    if (!models.music_widget) return
-
-    models.music_widget.scene.traverse((child) => {
+    if (!scene) return
+  
+    scene.traverse((child) => {
       if (child instanceof THREE.Mesh) {
         switch (child.name.toLowerCase()) {
           case 'progress_bar':
@@ -65,7 +79,7 @@ export function MusicWidget({ position = [0, 0, 0], rotation = [0, Math.PI * -0.
         }
       }
     });
-  }, [models.music_widget]);
+  }, [scene]);
 
 useFrame(() => {
   if (progresserRef.current && progressBarRef.current) {
@@ -150,7 +164,7 @@ useFrame(() => {
 
 
   useEffect(() => {
-    if (!models.music_widget) return;
+    if (!scene) return;
 
     const addButtonInteractions = (mesh: THREE.Mesh | null, buttonType: string) => {
       if (!mesh) {
@@ -186,7 +200,7 @@ useFrame(() => {
     return () => {
       cleanups.forEach(cleanup => cleanup && cleanup());
     };
-  }, [models.music_widget]);
+  }, [scene]);
 
   // Update button visibility based on play state
   useEffect(() => {
@@ -198,10 +212,8 @@ useFrame(() => {
     }
   }, [isPlaying]);
 
-  if (!models.music_widget) {
-
+  if (!scene)
     return null;
-  }
 
     // const textRef = useRef<THREE.Mesh>(null)
   // const [positionTest, setPositionTest] = useState([0, 0, 0]) // x, y, z
@@ -237,7 +249,7 @@ useFrame(() => {
       rotation={rotation}
     >
       <primitive 
-        object={models.music_widget.scene} 
+        object={scene} 
         scale={0.7}
         rotation={[0, Math.PI * 0.4, 0]}
       />

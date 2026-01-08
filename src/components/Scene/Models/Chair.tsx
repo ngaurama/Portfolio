@@ -1,20 +1,25 @@
 // components/Scene/Models/Chair.tsx
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { useModels } from '../../../hooks/useModels'
 import { useCamera } from '../../../hooks/useCamera'
+import type { GLTF } from 'three-stdlib'
 
 interface ChairProps {
+  model: GLTF | null,
   position?: [number, number, number]
 }
 
-export function Chair({ position = [0, 0, 0] }: ChairProps) {
-  const { models } = useModels()
+
+export function Chair({ model, position = [0, 0, 0] }: ChairProps) {
   const chairRef = useRef<THREE.Group>(null)
   const { currentView, moveToFrontView, moveToSideView } = useCamera()
   const [hovered, setHovered] = useState(false)
   
+  const scene = useMemo(() => {
+    if (!model) return null
+    return model.scene.clone(true)
+  }, [model])
   // const handleClick = (event: Event) => {
   //   if (currentView !== 'book') {
   //     event.stopPropagation()
@@ -53,7 +58,7 @@ export function Chair({ position = [0, 0, 0] }: ChairProps) {
     }
   })
 
-  if (!models.chair) return null
+  if (!scene) return null
 
   return (
     <group 
@@ -64,7 +69,7 @@ export function Chair({ position = [0, 0, 0] }: ChairProps) {
       onPointerLeave={handlePointerLeave}
       >
       <primitive 
-        object={models.chair.scene} 
+        object={scene} 
         scale={6}
         rotation={[0, Math.PI * 1.17, 0]}
     />

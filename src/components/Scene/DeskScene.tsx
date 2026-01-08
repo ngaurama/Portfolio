@@ -25,7 +25,7 @@ interface DeskSceneProps {
 }
 
 export function DeskScene({ onLoaded, lampColor, setLampColor, setColorPickerOpen, colorPickerOpen }: DeskSceneProps) {
-  const { isLoading: modelsLoading } = useModels()
+  const { models, isLoading: modelsLoading } = useModels()
   // const [showMusicWidget, setShowMusicWidget] = useState(false);
   const { currentView } = useCamera()
   const devMode = false
@@ -71,15 +71,15 @@ export function DeskScene({ onLoaded, lampColor, setLampColor, setColorPickerOpe
       /> */}
 
       
-      <Desk position={[0, -1.25, 0]} />
+      {/* <Desk position={[0, -1.25, 0]} />
       <Chair position={[1, -1.5, 2.5]} />
       <Laptop position={[0, 2.5, -0.5]} rotation={[0, Math.PI * 0.08, 0]} />
       <Headphones 
         position={[-2.3, -1.25, 3]} 
         rotation={[0, 0, 0]}      
       />
-      <Pen position={[2.5, 2.45, -0.5]} rotation={[0, 0, 0]} />
-      <Lamp
+      <Pen position={[2.5, 2.45, -0.5]} rotation={[0, 0, 0]} /> */}
+      {/* <Lamp
         position={[3.2, 2.4, -1.7]}
         lampColor={lampColor}
         setLampColor={setLampColor}
@@ -89,13 +89,33 @@ export function DeskScene({ onLoaded, lampColor, setLampColor, setColorPickerOpe
 
       <group visible={currentView === 'headphone'}>
         <MusicWidget position={[-3, 2.8, 0]} />
-      </group>
-{/* 
+      </group> */}
+      {/* 
       {currentView === 'headphone' && (
         <MusicWidget position={[-3, 2.8, 0]} />
       )} */}
 
       <Book position={[1.3, 2.47, 0.6]} rotation={[0, -0.8, 1.54]}/> 
+      <Desk model={models.desk} position={[0, -1.25, 0]} />
+      <Chair model={models.chair} position={[1, -1.5, 2.5]} />
+      <Laptop model={models.laptop} position={[0, 2.5, -0.5]} rotation={[0, Math.PI * 0.08, 0]} />
+      <Headphones model={models.headphones} position={[-2.3, -1.25, 3]}  rotation={[0, 0, 0]} />
+      <Pen model={models.pen} position={[2.5, 2.45, -0.5]} />
+      <Lamp
+        model={models.lamp}
+        position={[3.2, 2.4, -1.7]}
+        lampColor={lampColor}
+        setLampColor={setLampColor}
+        setColorPickerOpen={setColorPickerOpen}
+        colorPickerOpen={colorPickerOpen}
+      />
+
+      <MusicWidget
+        model={models.music_widget}
+        active={currentView === 'headphone'}
+        position={[-3, 2.8, 0]}
+      />
+
 
       <CarpetPlane />
     </>

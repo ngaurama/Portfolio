@@ -19,6 +19,3 @@ export const useCamera = create<CameraState>((set) => ({
   moveToBookView: () => set({ currentView: 'book' }),
   moveToHeadphoneView: () => set({ currentView: 'headphone' }),
 }))
-
-
-

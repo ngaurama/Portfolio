@@ -1,20 +1,26 @@
 // components/Scene/Models/Headphones.tsx
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
-import { useModels } from '../../../../hooks/useModels'
 import { useFrame } from '@react-three/fiber'
 import { useCamera } from '../../../../hooks/useCamera'
+import type { GLTF } from 'three-stdlib'
 
 interface HeadphonesProps {
+  model: GLTF | null,
   position?: [number, number, number],
   rotation?: [number, number, number]
 }
 
-export function Headphones({ position = [0, 0, 0], rotation = [0, Math.PI * -0.1, 0]}: HeadphonesProps) {
-  const { models } = useModels()
+export function Headphones({ model, position = [0, 0, 0], rotation = [0, Math.PI * -0.1, 0]}: HeadphonesProps) {
   const { moveToHeadphoneView, moveToFrontView, currentView } = useCamera()
   const headphoneRef = useRef<THREE.Group>(null)
   const [hovered, setHovered] = useState(false)
+
+
+  const scene = useMemo(() => {
+    if (!model) return null
+    return model.scene.clone(true)
+  }, [model])
 
   useFrame(() => {
     if (headphoneRef.current && hovered) {
@@ -42,7 +48,7 @@ export function Headphones({ position = [0, 0, 0], rotation = [0, Math.PI * -0.1
     document.body.style.cursor = 'default'
   }
 
-  if (!models.headphones) return null
+  if (!scene) return null
 
   return (
     <group 
@@ -54,7 +60,7 @@ export function Headphones({ position = [0, 0, 0], rotation = [0, Math.PI * -0.1
       onPointerLeave={handlePointerLeave}
       >
       <primitive 
-        object={models.headphones.scene} 
+        object={scene} 
         scale={0.8}
         rotation={[0, Math.PI * 0.4, 0]}
       />

@@ -53,7 +53,7 @@ export default function Footer() {
                         }}
                     />
                     {helpActive && (
-                    <div className="fixed bottom-18 left-14 -translate-x-1/2 text-2xl text-black cursor-pointer non-selectable text-center drop-shadow-outline z-20">
+                    <div className="fixed bottom-18 left-14 -translate-x-1/2 text-2xl text-black cursor-pointer non-selectable text-center drop-shadow-outline z-20 pointer-events-none">
                         Help
                     </div>
                     )}

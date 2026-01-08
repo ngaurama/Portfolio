@@ -23,7 +23,7 @@ export default function Doodles() {
                         src="/notes.gif"
                         alt="Music notes"
                         // className="fixed m-4 bottom-0 left-20 rotate-20 transform -translate-x-1/2 w-[150px] z-20 transition-transform"
-                        className="fixed bottom-[5%] left-[2%] rotate-20 w-[8vw] max-w-[150px] min-w-[80px] z-20 cursor-pointer non-selectable transition-transform"
+                        className="fixed bottom-[5%] left-[2%] rotate-20 w-[8vw] max-w-[150px] min-w-[80px] z-20 non-selectable transition-transform"
                     />
                     <img
                         src="/sisyphus.gif"

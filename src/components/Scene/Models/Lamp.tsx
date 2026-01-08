@@ -1,11 +1,12 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
-import { useModels } from '../../../hooks/useModels'
 import { useCamera } from '../../../hooks/useCamera'
 import { useFrame, type ThreeEvent } from '@react-three/fiber'
+import type { GLTF } from 'three-stdlib'
 // import { Environment } from '@react-three/drei'
 
 interface LampProps {
+  model: GLTF | null
   position?: [number, number, number]
   lampColor: string
   setLampColor: (color: string) => void
@@ -13,13 +14,17 @@ interface LampProps {
   colorPickerOpen: boolean
 }
 
-export function Lamp({ position = [0, 0, 0], lampColor, setColorPickerOpen, colorPickerOpen }: LampProps) {
-  const { models } = useModels()
+export function Lamp({ model, position = [0, 0, 0], lampColor, setColorPickerOpen, colorPickerOpen }: LampProps) {
   const lampRef = useRef<THREE.Group>(null)
   const lightRef = useRef<THREE.SpotLight>(null)
   const { currentView } = useCamera()
   const [hovered, setHovered] = useState(false)    
   
+  const scene = useMemo(() => {
+    if (!model) return null
+    return model.scene.clone(true)
+  }, [model])
+
   useFrame(() => {
     if (lampRef.current && hovered && currentView !== 'book') {
       lampRef.current.scale.lerp(new THREE.Vector3(1.02, 1.02, 1.02), 0.1)
@@ -56,8 +61,8 @@ export function Lamp({ position = [0, 0, 0], lampColor, setColorPickerOpen, colo
   }
 
   useEffect(() => {
-    if (!models.lamp) return
-    models.lamp.scene.traverse((child) => {
+    if (!scene) return
+    scene.traverse((child) => {
       if (child instanceof THREE.Mesh) {
         if (child.name.toLowerCase().includes("bulb")) {
           const material = child.material as THREE.MeshStandardMaterial
@@ -66,10 +71,10 @@ export function Lamp({ position = [0, 0, 0], lampColor, setColorPickerOpen, colo
         }
       }
     })
-  }, [lampColor, models.lamp])
+  }, [lampColor, scene])
 
 
-  if (!models.lamp) return null
+  if (!scene) return null
 
   let spotIntense = 15
   if (currentView === 'book')
@@ -92,7 +97,7 @@ export function Lamp({ position = [0, 0, 0], lampColor, setColorPickerOpen, colo
       >
       {/* Lamp model */}
       <primitive 
-        object={models.lamp.scene} 
+        object={scene} 
         scale={0.7}
         rotation={[0, Math.PI * 1.1, 0]}
       />

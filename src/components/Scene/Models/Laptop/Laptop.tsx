@@ -1,25 +1,31 @@
 // components/Scene/Models/Laptop.tsx
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect, useState, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { useModels } from '../../../../hooks/useModels'
 import { ScreenManager } from './ScreenManager'
 import { useCamera } from '../../../../hooks/useCamera'
+import type { GLTF } from 'three-stdlib'
 
 interface LaptopProps {
+  model: GLTF | null,
   position?: [number, number, number],
   rotation?: [number, number, number]
 }
 
-export function Laptop({ position = [0, 0, 0.3], rotation = [0, Math.PI * -0.1, 0] }: LaptopProps) {
-  const { models } = useModels()
+export function Laptop({ model, position = [0, 0, 0.3], rotation = [0, Math.PI * -0.1, 0] }: LaptopProps) {
   const { moveToLaptopView, moveToFrontView, currentView } = useCamera()
   const laptopRef = useRef<THREE.Group>(null)
   const [screenMesh, setScreenMesh] = useState<THREE.Mesh | null>(null)
   const [hovered, setHovered] = useState(false)
   // const [clicked, setClicked] = useState(false)
+
+  const scene = useMemo(() => {
+    if (!model) return null
+    return model.scene.clone(true)
+  }, [model])
+
   useEffect(() => {
-    if (!models.laptop) return
+    if (!scene) return
 
     
     const findScreenMesh = (object: THREE.Object3D): THREE.Mesh | null => {
@@ -33,11 +39,11 @@ export function Laptop({ position = [0, 0, 0.3], rotation = [0, Math.PI * -0.1, 
       return null
     }
 
-    const screen = findScreenMesh(models.laptop.scene)
+    const screen = findScreenMesh(scene)
     if (screen) {
       setScreenMesh(screen)
     }
-  }, [models.laptop])
+  }, [scene])
 
   useFrame(() => {
     if (laptopRef.current && hovered) {
@@ -65,7 +71,7 @@ export function Laptop({ position = [0, 0, 0.3], rotation = [0, Math.PI * -0.1, 
     document.body.style.cursor = 'default'
   }
 
-  if (!models.laptop) return null
+  if (!scene) return null
 
   return (
     <group 
@@ -77,7 +83,7 @@ export function Laptop({ position = [0, 0, 0.3], rotation = [0, Math.PI * -0.1, 
       onPointerLeave={handlePointerLeave}
     >
       <primitive 
-        object={models.laptop.scene} 
+        object={scene} 
         scale={1}
       />
       {screenMesh && (
