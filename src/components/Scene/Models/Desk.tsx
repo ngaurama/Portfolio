@@ -74,7 +74,7 @@ export function Desk({ model, position = [0, 0, 0] }: DeskProps) {
           <HelpText3D
             position={[3, 5.75, -1.1]}
             rotation={[0, -0.8, 0]}
-            text="Click on the lamp to change the lighting color"
+            text="Click     on the lamp to        change the lighting   color"
             fontSize={0.25}
             maxWidth={2.3}
             fadeOut={currentView !== 'side'}

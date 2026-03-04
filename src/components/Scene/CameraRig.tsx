@@ -10,7 +10,7 @@ import * as THREE from 'three'
 const isMobile = window.innerWidth < 768;  
 let bookY = 4.54
 if (isMobile)
-  bookY = 5
+  bookY = 5.7
 //  laptop: new THREE.Vector3(0.25, 3.5, 1),
 const CAMERA_POSITIONS = {
   side: new THREE.Vector3(-6, 6, 6),

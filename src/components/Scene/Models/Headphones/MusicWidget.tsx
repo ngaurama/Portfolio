@@ -202,7 +202,6 @@ useFrame(() => {
     };
   }, [scene]);
 
-  // Update button visibility based on play state
   useEffect(() => {
     if (playButtonRef.current) {
       playButtonRef.current.visible = !isPlaying;
