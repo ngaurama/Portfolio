@@ -1,6 +1,6 @@
 // components/Scene/Models/Book/Page.tsx
 import { useCursor, useTexture } from "@react-three/drei"
-import { useFrame, type ThreeEvent } from "@react-three/fiber"
+import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber"
 import { useAtom } from "jotai"
 import { easing } from "maath"
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
@@ -335,6 +335,7 @@ export const Page: React.FC<PageProps> = ({
   picture.colorSpace = picture2.colorSpace = SRGBColorSpace;
   
   const { currentView } = useCamera()
+  const { invalidate } = useThree()
   // const [picture, picture2] = textures
   // picture.colorSpace = picture2.colorSpace = SRGBColorSpace
 
@@ -405,8 +406,11 @@ export const Page: React.FC<PageProps> = ({
 
   useEffect(() => {
     if (!skinnedMeshRef.current) return;
+    const mesh = skinnedMeshRef.current;
+    if (Array.isArray(mesh.material)) {
+      mesh.material.forEach((m) => m.dispose());
+    }
     if (front === 'cover_6' || back === 'back_final') {
-      const mesh = skinnedMeshRef.current;
       mesh.material = [
         new MeshStandardMaterial({ color: whiteColor, emissive: new Color(0x000000) }),
         new MeshStandardMaterial({ color: "#111", emissive: new Color(0x000000) }),
@@ -430,8 +434,6 @@ export const Page: React.FC<PageProps> = ({
         }),
       ];
     } else {
-      const mesh = skinnedMeshRef.current;
-
       mesh.material = [
         new MeshStandardMaterial({ color: whiteColor }),
         new MeshStandardMaterial({ color: "#111" }),
@@ -452,7 +454,8 @@ export const Page: React.FC<PageProps> = ({
       ];
     }
 
-  }, [currentView, picture, picture2, number])
+    invalidate()
+  }, [picture, picture2, number, invalidate])
 
   const [highlighted, setHighlighted] = useState(false)
   // const [hoverTurn, setHoverTurn] = useState(0);
@@ -493,21 +496,22 @@ export const Page: React.FC<PageProps> = ({
     let targetRotation = opened ? -Math.PI / 2 : Math.PI / 2
     if (!bookClosed) targetRotation += degToRad(number * 0.3)
 
+    let stillTurning = false
     const bones = mesh.skeleton.bones
     bones.forEach((bone, i) => {
       const target = i === 0 ? group.current : bone
       if (!target) return
 
       // const hoverInfluence =
-      // hoverTurn * Math.max(0, (i - (PAGE_SEGMENTS -28)) / 28); 
+      // hoverTurn * Math.max(0, (i - (PAGE_SEGMENTS -28)) / 28);
       // const deg = hoverSide === "left" ? 0.0 : -0.1;
-      // const hoverAngle = degToRad(deg) * hoverInfluence; 
+      // const hoverAngle = degToRad(deg) * hoverInfluence;
       // bone.rotation.y += hoverAngle;
 
       const insideCurveIntensity = i < 8 ? Math.sin(i * 0.2 + 1.45) : 0
       const outsideCurveIntensity = i >= 12 ? Math.cos(i * 0.3 + 0.2) : 0
       const turningIntensity = Math.sin(i * Math.PI * (1 / bones.length)) * turningTime
-      let rotationAngle = 
+      let rotationAngle =
         insideCurveStrength * insideCurveIntensity * targetRotation -
         outsideCurveStrength * outsideCurveIntensity * targetRotation +
         turningCurveStrength * turningIntensity * targetRotation
@@ -516,11 +520,26 @@ export const Page: React.FC<PageProps> = ({
         rotationAngle = i === 0 ? targetRotation : 0
         foldRotationAngle = 0
       }
-      easing.dampAngle(target.rotation, "y", rotationAngle, easingFactor, delta)
       const foldIntensity =
         i > 8 ? Math.sin(i * Math.PI * (1 / bones.length) - 0.5) * turningTime : 0
-      easing.dampAngle(target.rotation, "x", foldRotationAngle * foldIntensity, easingFactorFold, delta)
+      const targetFoldAngle = foldRotationAngle * foldIntensity
+
+      if (
+        Math.abs(target.rotation.y - rotationAngle) > 0.001 ||
+        Math.abs(target.rotation.x - targetFoldAngle) > 0.001
+      ) {
+        stillTurning = true
+      }
+
+      easing.dampAngle(target.rotation, "y", rotationAngle, easingFactor, delta)
+      easing.dampAngle(target.rotation, "x", targetFoldAngle, easingFactorFold, delta)
     })
+
+    const emissiveSettled = Math.abs(
+      (mesh.material[4] instanceof MeshStandardMaterial ? mesh.material[4].emissiveIntensity : emissiveIntensity) -
+      emissiveIntensity
+    ) < 0.001
+    if (stillTurning || !emissiveSettled) invalidate()
   })
 
   const isEdgeHit = (e: ThreeEvent<MouseEvent>) => {

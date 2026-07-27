@@ -151,9 +151,10 @@ function App() {
         </div>
       )}
       <Canvas
-        // frameloop="demand"
+        frameloop="demand"
         performance={{ min: 0.5 }}
-        camera={{ 
+        dpr={isMobile ? [1, 1.5] : [1, 2]}
+        camera={{
           position: [0, 0, 0],
           fov: isMobile ? 85 : 50,
         }}

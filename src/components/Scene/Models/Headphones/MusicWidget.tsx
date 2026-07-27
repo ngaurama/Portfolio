@@ -1,7 +1,8 @@
 // components/Scene/Models/MusicWidget.tsx
 import { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
+import { easing } from 'maath'
 import { useMusicPlayer } from '../../../../hooks/useMusicPlayer'
 import { Text } from '@react-three/drei'
 import type { GLTF } from 'three-stdlib'
@@ -17,7 +18,7 @@ const SCALE_ZERO = new THREE.Vector3(0.0001, 0.0001, 0.0001)
 const SCALE_ONE = new THREE.Vector3(1, 1, 1)
 
 export function MusicWidget({ model, active, position = [0, 0, 0], rotation = [0, Math.PI * -0.1, 0] }: MusicWidgetProps) {
-  // const { scene } = useThree()
+  const { invalidate } = useThree()
   const musicWidgetRef = useRef<THREE.Group>(null)
   const progressBarRef = useRef<THREE.Mesh>(null)
   const progresserRef = useRef<THREE.Mesh>(null)
@@ -46,7 +47,8 @@ export function MusicWidget({ model, active, position = [0, 0, 0], rotation = [0
   useFrame((_, delta) => {
     if (!musicWidgetRef.current) return
     const target = active ? SCALE_ONE : SCALE_ZERO
-    musicWidgetRef.current.scale.lerp(target, delta * 6)
+    const stillAnimating = easing.damp3(musicWidgetRef.current.scale, target, 0.15, delta)
+    if (stillAnimating) invalidate()
   })
 
   useEffect(() => {
@@ -84,15 +86,16 @@ export function MusicWidget({ model, active, position = [0, 0, 0], rotation = [0
 useFrame(() => {
   if (progresserRef.current && progressBarRef.current) {
     const progressNormalized = progress / 100;
-    
+
     // const barWidth = progressBarRef.current.scale.x;
     const barPosition = progressBarRef.current.position;
-    
+
     const leftEdge = barPosition.x - 1.6;
     const rightEdge = barPosition.x + 1.3;
-    
+
     progresserRef.current.position.x = leftEdge + progressNormalized * (rightEdge - leftEdge);
-    
+
+    if (isPlaying) invalidate();
   }
 });
 
@@ -122,16 +125,18 @@ useEffect(() => {
 useFrame(() => {
   if (progresserRef.current && fillRef.current) {
     const progressNormalized = progress / 100;
-    
+
     const leftEdge = -1.6;
     const rightEdge = 1.3;
     const totalRange = rightEdge - leftEdge;
-    
+
     const currentX = leftEdge + progressNormalized * totalRange;
-    
+
     progresserRef.current.position.x = currentX;
     fillRef.current.scale.x = progressNormalized;
     fillRef.current.position.x = leftEdge + (progressNormalized * totalRange) / 2;
+
+    if (isPlaying) invalidate();
   }
 });
 

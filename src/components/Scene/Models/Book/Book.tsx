@@ -4,8 +4,11 @@ import { pageAtom, pages } from "./pages"
 import { Page } from "./Page"
 import { useRef, useState } from "react"
 import * as THREE from "three"
-import { useFrame, type ThreeEvent } from "@react-three/fiber"
+import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber"
 import { useCamera } from "../../../../hooks/useCamera"
+
+const HOVER_SCALE = new THREE.Vector3(1.07, 1.07, 1.07)
+const IDLE_SCALE = new THREE.Vector3(1, 1, 1)
 
 interface BookProps {
   position?: [number, number, number]
@@ -15,6 +18,7 @@ interface BookProps {
 export function Book({ position = [0, 0, 0], rotation = [0, 0, 0] }: BookProps) {
   const [page] = useAtom(pageAtom)
   const { moveToBookView, currentView } = useCamera()
+  const { invalidate } = useThree()
   const bookRef = useRef<THREE.Group>(null!)
   const [hovered, setHovered] = useState(false)
 
@@ -40,11 +44,10 @@ export function Book({ position = [0, 0, 0], rotation = [0, 0, 0] }: BookProps) 
   }
 
   useFrame(() => {
-    if (bookRef.current && hovered && currentView !== 'book') {
-      bookRef.current.scale.lerp(new THREE.Vector3(1.07, 1.07, 1.07), 0.1)
-    } else if (bookRef.current) {
-      bookRef.current.scale.lerp(new THREE.Vector3(1, 1, 1), 0.1)
-    }
+    if (!bookRef.current) return
+    const target = hovered && currentView !== 'book' ? HOVER_SCALE : IDLE_SCALE
+    bookRef.current.scale.lerp(target, 0.1)
+    if (bookRef.current.scale.distanceTo(target) > 0.001) invalidate()
   })
 
   return (

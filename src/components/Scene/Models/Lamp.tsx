@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { useCamera } from '../../../hooks/useCamera'
-import { useFrame, type ThreeEvent } from '@react-three/fiber'
+import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
 import type { GLTF } from 'three-stdlib'
 // import { Environment } from '@react-three/drei'
+
+const HOVER_SCALE = new THREE.Vector3(1.02, 1.02, 1.02)
+const IDLE_SCALE = new THREE.Vector3(1, 1, 1)
 
 interface LampProps {
   model: GLTF | null
@@ -18,19 +21,19 @@ export function Lamp({ model, position = [0, 0, 0], lampColor, setColorPickerOpe
   const lampRef = useRef<THREE.Group>(null)
   const lightRef = useRef<THREE.SpotLight>(null)
   const { currentView } = useCamera()
-  const [hovered, setHovered] = useState(false)    
-  
+  const { invalidate } = useThree()
+  const [hovered, setHovered] = useState(false)
+
   const scene = useMemo(() => {
     if (!model) return null
     return model.scene.clone(true)
   }, [model])
 
   useFrame(() => {
-    if (lampRef.current && hovered && currentView !== 'book') {
-      lampRef.current.scale.lerp(new THREE.Vector3(1.02, 1.02, 1.02), 0.1)
-    } else if (lampRef.current) {
-      lampRef.current.scale.lerp(new THREE.Vector3(1, 1, 1), 0.1)
-    }
+    if (!lampRef.current) return
+    const target = hovered && currentView !== 'book' ? HOVER_SCALE : IDLE_SCALE
+    lampRef.current.scale.lerp(target, 0.1)
+    if (lampRef.current.scale.distanceTo(target) > 0.001) invalidate()
   })
 
   const handlePointerEnter = () => {

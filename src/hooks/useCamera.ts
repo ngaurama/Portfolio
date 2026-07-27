@@ -13,9 +13,9 @@ interface CameraState {
 
 export const useCamera = create<CameraState>((set) => ({
   currentView: 'side',
-  moveToFrontView: () => set({ currentView: 'front' }),
-  moveToSideView: () => set({ currentView: 'side' }),
-  moveToLaptopView: () => set({ currentView: 'laptop' }),
-  moveToBookView: () => set({ currentView: 'book' }),
-  moveToHeadphoneView: () => set({ currentView: 'headphone' }),
+  moveToFrontView: () => set((state) => state.currentView === 'front' ? state : { currentView: 'front' }),
+  moveToSideView: () => set((state) => state.currentView === 'side' ? state : { currentView: 'side' }),
+  moveToLaptopView: () => set((state) => state.currentView === 'laptop' ? state : { currentView: 'laptop' }),
+  moveToBookView: () => set((state) => state.currentView === 'book' ? state : { currentView: 'book' }),
+  moveToHeadphoneView: () => set((state) => state.currentView === 'headphone' ? state : { currentView: 'headphone' }),
 }))

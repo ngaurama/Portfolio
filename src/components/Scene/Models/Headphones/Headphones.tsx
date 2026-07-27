@@ -1,9 +1,12 @@
 // components/Scene/Models/Headphones.tsx
 import { useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import { useCamera } from '../../../../hooks/useCamera'
 import type { GLTF } from 'three-stdlib'
+
+const HOVER_SCALE = new THREE.Vector3(1.04, 1, 1.04)
+const IDLE_SCALE = new THREE.Vector3(1, 1, 1)
 
 interface HeadphonesProps {
   model: GLTF | null,
@@ -13,6 +16,7 @@ interface HeadphonesProps {
 
 export function Headphones({ model, position = [0, 0, 0], rotation = [0, Math.PI * -0.1, 0]}: HeadphonesProps) {
   const { moveToHeadphoneView, moveToFrontView, currentView } = useCamera()
+  const { invalidate } = useThree()
   const headphoneRef = useRef<THREE.Group>(null)
   const [hovered, setHovered] = useState(false)
 
@@ -23,11 +27,10 @@ export function Headphones({ model, position = [0, 0, 0], rotation = [0, Math.PI
   }, [model])
 
   useFrame(() => {
-    if (headphoneRef.current && hovered) {
-      headphoneRef.current.scale.lerp(new THREE.Vector3(1.04, 1, 1.04), 0.1)
-    } else if (headphoneRef.current) {
-      headphoneRef.current.scale.lerp(new THREE.Vector3(1, 1, 1), 0.1)
-    }
+    if (!headphoneRef.current) return
+    const target = hovered ? HOVER_SCALE : IDLE_SCALE
+    headphoneRef.current.scale.lerp(target, 0.1)
+    if (headphoneRef.current.scale.distanceTo(target) > 0.001) invalidate()
   })
 
   const handleClick = () => {

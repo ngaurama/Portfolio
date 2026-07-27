@@ -50,7 +50,7 @@ const CAMERA_LOOK_AT = {
 // }
 
 export function CameraRig() {
-  const { camera } = useThree()
+  const { camera, invalidate } = useThree()
   const { currentView } = useCamera()
   // const cameraRef = useRef<THREE.Camera>(camera)
 
@@ -61,15 +61,17 @@ export function CameraRig() {
     const lerpSpeed = 2
     camera.position.lerp(targetPosition, delta * lerpSpeed)
 
-    
+
     const currentLookAt = new THREE.Vector3()
     camera.getWorldDirection(currentLookAt)
     currentLookAt.add(camera.position)
-    
+
     const newLookAt = new THREE.Vector3()
     newLookAt.lerpVectors(currentLookAt, targetLookAt, delta * 2)
-    
+
     camera.lookAt(newLookAt)
+
+    if (camera.position.distanceTo(targetPosition) > 0.001) invalidate()
   })
 
   return null

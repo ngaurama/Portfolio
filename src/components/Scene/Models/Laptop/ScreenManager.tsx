@@ -1,6 +1,6 @@
 // components/Scene/ScreenManager.tsx
 import { useRef, useEffect, useState, useCallback } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { FordJohnsonSorter } from './FordJohnson'
 import { useCamera } from '../../../../hooks/useCamera'
@@ -28,11 +28,11 @@ export function ScreenManager({ screenMesh, isPoweredOn = true }: ScreenManagerP
   const [currentDirectory, setCurrentDirectory] = useState('/')
   const [, setImageTexture] = useState<THREE.Texture | null>(null)
   const { currentView } = useCamera()
+  const { invalidate } = useThree()
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const textureRef = useRef<THREE.CanvasTexture | null>(null)
   const materialRef = useRef<THREE.MeshBasicMaterial | null>(null)
-  const lastCursorToggle = useRef(0)
   const cursorBlinkInterval = 500
 
   const files = {
@@ -621,19 +621,23 @@ export function ScreenManager({ screenMesh, isPoweredOn = true }: ScreenManagerP
     ctx.fillText('┃', cursorX, currentY)
   }
 
-  useFrame((state) => {
-    if (!isPoweredOn) return
+  const screenVisible = currentView === 'laptop' || currentView === 'front'
 
-    const now = state.clock.elapsedTime * 1000
-    if (now - lastCursorToggle.current > cursorBlinkInterval) {
+  useEffect(() => {
+    if (!isPoweredOn || !screenVisible) return
+    const interval = setInterval(() => {
       setCursorVisible(prev => !prev)
-      lastCursorToggle.current = now
-    }
-    
+    }, cursorBlinkInterval)
+    return () => clearInterval(interval)
+  }, [isPoweredOn, screenVisible])
+
+  useEffect(() => {
+    if (!isPoweredOn || !screenVisible) return
     if (!isInViewerMode || (isInViewerMode && viewerContentLines.length > 0)) {
       renderContent()
+      invalidate()
     }
-  })
+  }, [isPoweredOn, screenVisible, isInViewerMode, viewerContentLines, renderContent, invalidate])
 
   return null
 }
